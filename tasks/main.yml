@@ -1,0 +1,20 @@
+---
+# tasks file for dellos-system
+ - name: "Configure System for OS10 Device"
+   dellos10_config:
+      src: dellos10_system.j2
+      provider: "{{ cli }}"
+   when: ansible_net_os_name == "dellos10"
+
+ - name: "Configure System for OS9 Device"
+   dellos9_config:
+      src: dellos9_system.j2
+      provider: "{{ cli }}"
+   when: ansible_net_os_name == "dellos9"
+
+ - name: "Configure System for OS6 Device"
+   dellos6_config:
+      src: dellos6_system.j2
+      provider: "{{ cli }}"
+   when: ansible_net_os_name == "dellos6"
+

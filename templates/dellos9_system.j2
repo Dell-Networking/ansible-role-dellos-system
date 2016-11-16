@@ -1,0 +1,174 @@
+#jinja2: trim_blocks: True,lstrip_blocks: True
+{#############################################
+
+Purpose:
+Configure System commands for OS9 Devices
+
+dellos_system:
+ OS9:
+    snmp_contact:  test
+    snmp_location: chennai
+    snmp_community:
+      - name: public
+        access_mode: ro
+        state: present
+      - name: private
+        access_mode: rw
+        state: present
+    snmp_host:
+      - ip: 2001:4898:f0:f09b::2000
+        trapcom: msft
+        udpport: 162
+        state: absent
+    users:
+      - username: test
+        password: test
+        role: sysadmin
+        privilege: 0
+        state: present
+    sntp:
+      - ip: 2.2.2.2
+        state: present
+    logging:
+      - ip: 1.1.1.1
+        state: present
+    management_rt:
+      - ip: 10.16.148.254
+        state: present
+        ipv4: True
+###################################################}
+{% set system_vars = dellos_system[hostname] %}
+
+{% if hostname is defined and hostname %}
+hostname {{ hostname }}
+{% endif %}
+{% for key,value in system_vars.iteritems() %}
+  {% if key == "snmp_contact" %}
+    {% if value %}
+snmp-server contact {{ value }}
+    {% else %}
+no snmp-server contact
+    {% endif %}
+
+  {% elif key == "snmp_location" %}
+    {% if value  %}
+snmp-server location {{ value }}
+    {% else %}
+no snmp-server location
+    {% endif %}
+
+  {% elif key == "snmp_community" %}
+    {% if value %}
+      {% for item in value %}
+        {% if item.name is defined and item.name %}
+          {% if item.state is defined and item.state == "absent" %}
+no snmp-server community {{ item.name }}
+          {% else %}
+            {% if item.access_mode is defined and item.access_mode %}
+snmp-server community {{ item.name }} {{ item.access_mode }}
+            {% endif %}
+          {% endif %}
+        {% endif %}
+      {% endfor %}
+    {% endif %}
+
+  {% elif key == "snmp_host" %}
+    {% for item in value %}
+      {% if item.ip is defined and item.ip %}
+        {% if item.state is defined and item.state == "absent" %}
+          {% if item.communitystring is defined and item.communitystring %}
+no snmp-server host {{ item.ip }} traps version 2c {{ item.communitystring }}
+          {% else %}
+no snmp-server host {{ item.ip }} traps version 2c
+          {% endif %}
+        {% else %}
+          {% if item.communitystring is defined and item.communitystring %}
+            {% if item.udpport is defined and item.udpport %}
+snmp-server host {{ item.ip }} traps version 2c {{ item.communitystring }} udp-port {{ item.udpport }}
+            {% else %}
+snmp-server host {{ item.ip }} traps version 2c {{ item.communitystring }} udp-port 162
+            {% endif %}
+          {% else %}
+snmp-server host {{ item.ip }} traps version 2c public udp-port 162
+          {% endif %}
+        {% endif %}
+      {% endif %}
+    {% endfor%}
+
+  {% elif key == "users" %}
+    {% for item in value %}
+      {% if item.username is defined %}
+        {% if item.state is defined and item.state == "absent" %}
+no username {{ item.username }}
+        {% else %}
+          {% if item.password is defined and item.password %}
+            {% if item.role is defined and item.role %}
+              {% if item.privilege is defined and item.privilege %}
+username {{ item.username }} password {{ item.password }} role {{ item.role }} privilege {{ item.privilege }}
+              {% else %}
+username {{ item.username }} password {{ item.password }} role {{ item.role }}
+              {% endif %}
+            {% else %}
+username {{ item.username }} password {{ item.password }}
+            {% endif %}
+          {% elif not item.password %}
+            {% if item.role is defined and item.role %}
+              {% if item.privilege is defined and item.privilege %}
+username {{ item.username }} nopassword role {{ item.role }} privilege {{ item.privilege }}
+              {% else %}
+username {{ item.username }} nopassword role {{ item.role }}
+              {% endif %}
+            {% else %}
+username {{ item.username }} nopassword
+            {% endif %}
+          {% endif %}
+        {% endif %}
+      {% endif %}
+    {% endfor %}
+
+  {% elif key == "sntp" %}}
+    {% for item in value %}
+      {% if item.ip is defined and item.ip %}
+        {% if item.state is defined and item.state == "absent" %}
+no ntp server {{ item.ip }}
+        {% else %}
+ntp server {{ item.ip }}
+        {% endif %}
+      {% endif %}
+    {% endfor %}
+
+  {% elif key == "logging" %}
+    {% for item in value %}
+      {% if item.ip is defined and item.ip %}
+        {% if item.state is defined and item.state == "absent" %}
+no logging {{ item.ip }}
+        {% else %}
+logging {{ item.ip }}
+        {% endif %}
+      {% endif %}
+    {% endfor %}
+
+  {% elif key == "management_rt" %}
+    {% for item in value %}
+      {% if item.ip is defined and item.ip %}
+        {% if item.ipv4 is defined and item.ipv4 %}
+          {% if item.state is defined and item.state == "absent" %}
+no management route 0.0.0.0/0 {{ item.ip }}
+          {% else %}
+management route 0.0.0.0/0 {{ item.ip }}
+          {% endif %}
+        {% else %}
+          {% if item.state is defined and item.state == "absent" %}
+no management route ::/0 {{ item.ip }}
+          {% else %}
+management route ::/0 {{ item.ip }}
+          {% endif %}
+        {% endif%}
+      {% endif %}
+    {% endfor %}
+
+  {% endif %}
+{% endfor %}
+
+
+

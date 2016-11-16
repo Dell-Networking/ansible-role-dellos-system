@@ -1,0 +1,105 @@
+#jinja2: trim_blocks: True,lstrip_blocks: True
+{#############################################
+
+Purpose:
+Configure System commands for OS10 Devices
+
+dellos_system:
+ OS10:
+    snmp_contact:  test
+    snmp_location: Chennai
+    snmp_community:
+      - name: public
+        access_mode: ro
+        state: present
+    users:
+      - username: test
+        password: test
+        role: sysadmin
+        privilege: 0
+        state: present
+    sntp:
+      - ip: 2.2.2.2
+        state: present
+    logging:
+      - ip: 1.1.1.1
+        state: present
+
+###############################################}
+{% set system_vars = dellos_system[hostname] %}
+{% if hostname is defined and hostname %}
+hostname {{ hostname }}
+{% endif %}
+
+{% for key,value in system_vars.iteritems() %}
+  {% if key == "snmp_contact" %}
+    {% if value %}
+snmp-server contact {{ value }}
+    {% else %}
+no snmp-server contact
+    {% endif %}
+
+  {% elif key == "snmp_location" %}
+    {% if value  %}
+snmp-server location {{ value }}
+    {% else %}
+no snmp-server location
+    {% endif %}
+
+  {% elif key == "snmp_community" %}
+    {% if value %}
+      {% for item in value %}
+        {% if item.name is defined and item.name %}
+          {% if item.state is defined and item.state == "absent" %}
+no snmp-server community {{ item.name }}
+          {% else %}
+            {% if item.access_mode is defined and item.access_mode %}
+snmp-server community {{ item.name }} {{ item.access_mode }}
+            {% endif %}
+          {% endif %}
+        {% endif %}
+      {% endfor %}
+    {% endif %}
+
+  {% elif key == "users" %}
+    {% for item in value %}
+      {% if item.username is defined and item.username %}
+        {% if item.state is defined and item.state == "absent" %}
+no username {{ item.username }}
+        {% else %}
+          {% if item.password is defined and item.password %}
+            {% if item.role is defined and item.role %}
+username {{ item.username }} password $0${{ item.password }} role {{ item.role }}
+            {% else %}
+username {{ item.username }} password $0${{ item.password }}
+            {% endif %}
+          {% endif %}
+        {% endif %}
+      {% endif %}
+    {% endfor %}
+
+  {% elif key == "sntp" %}
+    {% for item in value %}
+      {% if item.ip is defined and item.ip %}
+        {% if item.state is defined and item.state == "absent" %}
+no ntp server {{ item.ip }}
+        {% else %}
+ntp server {{ item.ip }}
+        {% endif %}
+      {% endif %}
+    {% endfor %}
+
+  {% elif key == "logging" %}
+    {% for item in value %}
+      {% if item.ip is defined and item.ip %}
+        {% if item.state is defined and item.state == "absent" %}
+no logging server {{ item.ip }}
+        {% else %}
+logging server {{ item.ip }}
+        {% endif %}
+      {% endif %}
+    {% endfor %}
+
+  {% endif %}
+{% endfor %}
+
