@@ -1,8 +1,8 @@
 System Role for Dell EMC Networking OS
 ======================================
-This role configures the global system configuration. This role is abstracted for OS6, OS9, and OS10.  
-This role specifically enables configuration of the hostname, SNMP server, the NTP server, logging servers, the hostname, management route, and CLI users.
-This role takes an object that matches the requirements described as follows and performs the necessary configuration. If an object is not defined, then it is ignored.
+
+This role facilitates the configuration of global system attributes. It supports the configuration of hostname, SNMP server, NTP server,
+logging servers, management route, and CLI users. This role is abstracted for OS6, OS9, and OS10.
 
 
 Installation
@@ -116,10 +116,10 @@ Sample ``host_vars/leaf1``:
     hostname: leaf1
     provider:
       host: "{{ hostname }}"
-      username: admin
-      password: admin
+      username: xxxxx 
+      password: xxxxx
       authorize: yes
-	  auth_pass: "calvin"
+	  auth_pass: xxxxx 
       transport: cli
 	  
 Sample ``vars/main.yml``:

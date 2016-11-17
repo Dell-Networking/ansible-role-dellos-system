@@ -2,7 +2,7 @@
 ---
 galaxy_info:
   author: Dell Networking Engineering 
-  description: The ansible-role-dellos-system facilitates configuring system attributes in devices running Dell EMC Network Operating system OS6, OS9 and OS10.
+  description: The ansible-role-dellos-system facilitates the configuration of system attributes in devices running Dell EMC Network Operating System OS6, OS9, and OS10.
   company: Dell Inc 
   license:  Apache 2.0
   min_ansible_version: 2.2
@@ -13,9 +13,9 @@ galaxy_info:
   - name: Dell OS10
 
   galaxy_tags:
-    - networking
-    - dell 
-    - emc
+    - Networking
+    - DELL 
+    - EMC
     - OS9
     - OS6
     - OS10
