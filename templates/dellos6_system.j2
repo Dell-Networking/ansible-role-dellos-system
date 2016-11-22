@@ -15,6 +15,12 @@ dellos_system:
       - name: private
         access_mode: rw
         state: absent
+    snmp_traps: all
+    enable_password: force10
+    option_82:
+      - remote_id: test
+        vlan : 100
+        circuit_id : True
     snmp_host:
       - ip: 4.4.4.4
         communitystring: public
@@ -62,6 +68,35 @@ no snmp-server community {{ item.name }}
             {% if item.access_mode is defined and item.access_mode %}
 snmp-server community "{{ item.name }}" {{ item.access_mode }}
             {% endif %}
+          {% endif %}
+        {% endif %}
+      {% endfor %}
+    {% endif %}
+  {% elif key == "snmp_traps" %}
+    {% if value %}
+snmp-server enable traps all
+    {% else %}
+no snmp-server enable traps all
+    {% endif %}
+  {% elif key == "enable_password" %}
+    {% if value  %}
+enable password {{ value }}
+    {% else %}
+no enable password
+    {% endif %}
+  {% elif key == "option_82" %}
+    {% if value %}
+      {% for item in value  %}
+        {% if item.vlan is defined %}
+          {% if item.remote_id is defined and item.remote_id %}
+dhcp l2relay remote-id {{ item.remote_id }} vlan {{ item.vlan }}
+          {% else %}
+no dhcp l2relay remote-id vlan {{ item.vlan }}
+          {% endif %}
+          {% if item.circuit_id is defined and item.circuit_id %}
+dhcp l2relay circuit-id vlan {{ item.vlan }}
+          {% else %}
+no dhcp l2relay circuit-id vlan {{item.vlan }}
           {% endif %}
         {% endif %}
       {% endfor %}
@@ -115,7 +150,6 @@ username {{ item.username }} nopassword
 no sntp server {{ item.ip }}
         {% else %}
 sntp server {{ item.ip }}
-exit
         {% endif %}
       {% endif %}
     {% endfor %}
@@ -126,8 +160,8 @@ exit
 no logging {{ item.ip }}
         {% else %}
 logging {{ item.ip }}
-exit
         {% endif %}
+exit
       {% endif %}
     {% endfor %}
   {% endif %}

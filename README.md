@@ -14,7 +14,7 @@ ansible-galaxy install Dell-Networking.dellos-system
 
 Requirements
 ------------
-This role requires an SSH connection for connectivity to your Dell EMC Networking OS device. You can use any of the built-in Dell EMC Networking OS connection variables, or the ``provider``
+This role requires an SSH connection for connectivity to your Dell EMC Networking device. You can use any of the built-in Dell EMC Networking OS connection variables, or the ``provider``
 dictionary.
 
 Role Variables
@@ -24,42 +24,44 @@ Role Variables
 The hostname is the value of the variable ``hostname`` that corresponds to the name of the OS device.
 This role is abstracted using the variable ``ansible_net_os_name`` that can take the following values: dellos6, dellos9 and dellos10.
 
-Any role variable with corresponding state variable setting to *absent* negates the configuration of that variable. For variables with no state variable, setting empty value to the variable negates the corresponding configuration.
+Any role variable with a corresponding state variable set to absent negates the configuration of that variable. For variables with no state variable, setting an empty value for the variable negates the corresponding configuration.
 
-The variables and its values are **case-sensitive**.
+The variables and its values are case-sensitive.
 
-**hostname** (dictionary) contains the following keys:
+hostname contains the following keys:
 
 |        Key | Type                      | Notes                                                                                                                                                                                     |
 |------------|---------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| snmp_contact | string | The ASCII string used to configure the contact information of the SNMP server.  |
-| snmp_location | string | The ASCII string used to configure the location information of the SNMP server. |
-| snmp_community | list | This key contains objects to configure the SNMP community string. See the following snmp_community.* keys for each list item. |
-| snmp_community.name | string (required)         | The SNMP community string.                                                                                                                                                                |
-|snmp_community.access_mode | string, choices: ro, rw           | The mode of access with the community string.                                                                                                                                             |
-|     snmp_community.state | string, choices: absent, present*   | The absent state deletes a SNMP community string.                                                                                                                                 |
-| snmp_host | list | This key contains objects to configure SNMP hosts to receive SNMP traps. See the following snmp_host.* keys for each list item. For OS10 devices, this variable is not supported. |
-| snmp_host.ip | string (required) | The IP address of the SNMP trap host. |
-| snmp_host.communitystring | string | The SNMP community string for the trap host. |
-| snmp_host.udpport | string | The UDP number of the SNMP trap host. For OS9 devices, range of values accepted is 0-65535 and 1-65535 for OS6 devices. |
-| snmp_host.state | string, choices: absent, present* | The absent state deletes the SNMP trap host. |
-| users | list | This key contains objects to configure user accounts. See the following users.* keys for each list item. |
-|   users.username | string (required)         | The unique username. The username must adhere to certain format guidelines. Valid usernames begin with A-Z, a-z, or 0-9 and can also contain any of the following characters: @#$%^&*-_= +;<>,.~  |
-|   users.password | string                    | This key is the password set for the username.                              Password length must be atleast 8 characters in OS10 and OS6 devices.                                              |
+| unique_hostname | boolean: true, false* | Configures unique hostname in the blade switch. This key is only supported for blade switch (MXL) in OS9 devices.  |
+| enable_password | string              | Configures enable password. This key is only supported in OS6 and OS9. |
+| snmp_contact | ASCII string | Configures SNMP contact information.  |
+| snmp_location | ASCII string |Configures SNMP location information. |
+| snmp_community | list | Configures the SNMP community information. See the following snmp_community.* keys for each list item. |
+| snmp_community.name | string (required)         | SNMP community string.                                                                                                                                                                |
+|snmp_community.access_mode | string, choices: ro, rw           | Access mode for the community.                                                                                                                                             |
+|     snmp_community.state | string, choices: absent, present*   | Absent state deletes the SNMP community information.                                                                                                                                 |
+| snmp_host | list | Configures SNMP hosts to receive SNMP traps. See the following snmp_host.* keys for each list item. For OS10 devices, this key is not supported. |
+| snmp_host.ip | string (required) | IP address of the SNMP trap host. |
+| snmp_host.communitystring | string | SNMP community string for the trap host. |
+| snmp_host.udpport | string | UDP number of the SNMP trap host. For OS9 devices, the range is 0-65535 and 1-65535 for OS6 devices. |
+| snmp_host.state | string, choices: absent, present* | Configuring this key as absent deletes the SNMP trap host. |
+| snmp_traps | string, choices: all, ""* | Enables all SNMP traps. This key is only supported in OS6 and OS9.  |
+| users | list | Configures user account. See the following users.* keys for each list item. |
+|   users.username | string (required)         | Configures username. The username must adhere to specific format guidelines. Valid usernames begin with A-Z, a-z, or 0-9 and can also contain any of the following characters: @#$%^&*-_= +;<>,.~  |
+|   users.password | string                    | Configures password set for the username. Password length must be at least eight characters in OS10 and OS6 devices.                                              |
 |       users.role | string                    | Configures the role assigned to the user. For OS6 devices, this key is not supported.                                                                      |
-|  users.privilege | int                | Configures the privilege level for the user. For OS9 devices, the permitted values are integers between 0 and 15. For OS6 devices, the value can be either 0,1 or 15. For OS9 and OS6, if you omit this key, the default privilege is 1. For OS10 devices, this key is not supported.                                      |
-|     users.state | string, choices: absent, present*     | This key with the setting *absent* deletes a user account with the username.                                                                                                                                 |
-| sntp | list | This key contains objects to configure the NTP server. See the following sntp.* keys for each list item. |
+|  users.privilege | int                | Configures the privilege level for the user. For OS9 devices, the permitted values are integers between 0 and 15. For OS6 devices, the value can be either 0, 1, or 15. For OS9 and OS6, if you omit this key, the default privilege is 1. For OS10 devices, this key is not supported.                                      |
+|     users.state | string, choices: absent, present*     | Configuring this key as absent deletes a user account.                                                                                                                                 |
+| sntp | list | Configures the NTP server. See the following sntp.* keys for each list item. |
 |         sntp.ip | string (required)         | Configures the IPv4 address for the NTP server. The value must be in the form of A.B.C.D                                                                                             |
-|     sntp.state | string, choices: absent, present*     | This key with the setting *absent* deletes the NTP server.                                                                                                                                          |
-| logging | list | This key contains objects to configure the logging server. See the following logging.* keys for each list item. |
+|     sntp.state | string, choices: absent, present*     | Configuring this key as absent deletes the NTP server.                                                                                                                                          |
+| logging | list | Configures the logging server. See the following logging.* keys for each list item. |
 |         logging.ip | string (required)         | Configures the IPv4 address for the logging server. The value must be in the form of A.B.C.D                                                                                                 |
-|     logging.state | string, choices: absent, present*     | This key with the setting *absent* deletes the logging server.                                                                                                             |
-| management_rt | list | This key contains objects to configure the management routes. For OS10 and OS6 devices, this variable is not supported. |
-| management_rt.ip | string (required) | The IP address set as management route. For IPV4, the value must be in the form of A.B.C.D and for IPV6 the value must be in the form of A:B:C:D::E  |
-| management_rt.ipv4 | boolean: true*, false | This key identifies whether the management route is an IPv4 or IPV6 address. The key with setting *false* or undefined key takes ip as IPV6. |
-| management_rt.state | string, choices: absent, present* | The key with the setting *absent* deletes the management route. |
-
+|     logging.state | string, choices: absent, present*     | Configuring this key as absent deletes the logging server.                                                                                                             |
+| management_rt | list | Configures the management routes. For OS10 and OS6 devices, this variable is not supported. |
+| management_rt.ip | string (required) | IP destination prefix for management route. For IPV4, the value must be in the form of A.B.C.D and for IPv6 the value must be in the form of A:B:C:D::E  |
+| management_rt.ipv4 | boolean: true*, false | Specifies management route is an IPv4 or IPv6 address. When this is set to false or undefined, it sets IP as IPv6. |
+| management_rt.state | string, choices: absent, present* | Configuring this key as absent deletes the management route. |
 
 ```
 Note: Asterisk (*) denotes the default value if none is specified. 
@@ -73,16 +75,18 @@ communication with the nodes in your inventory. This information can exist in
 the Ansible group_vars or host_vars directories, or in the playbook itself.
 
 
+
 |         Key | Required | Choices    | Description                              |
 | ----------: | -------- | ---------- | ---------------------------------------- |
-|        host | yes      |            | The host name or address for connecting to the remote device over the specified *transport*. The value of *host* is the destination address for the transport. |
-|        port | no       |            | The port used to build the connection to the remote device.  If the task does not specify the value, the port value defaults to 22. |
-|    username | no       |            | Configures the username that authenticates the connection to the remote device. The value of *username* authenticates the CLI login. If the task does not specify the value, the value of environment variable ANSIBLE_NET_USERNAME is used instead. |
-|    password | no       |            | Specifies the password that authenticates the connection to the remote device. If the task does not specify the value, the value of environment variable ANSIBLE_NET_PASSWORD is used instead. |
-|   authorize | no       | yes, no*   | Instructs the module to enter privileged mode on the remote device before sending any commands. If not specified, the device attempts to execute all commands in non-privileged mode. If the task does not specify the value, the value of environment variable ANSIBLE_NET_AUTHORIZE is used instead. |
-|   auth_pass | no       |            | Specifies the password to use if required to enter privileged mode on the remote device. If *authorize=no*, then this argument does nothing. If the task does not specify the value, the value of environment variable ANSIBLE_NET_AUTH_PASS is used instead. |
-|   transport | yes      | cli*       | Configures the transport connection to use when connecting to the remote device. The *transport* argument supports connectivity to the device over CLI (SSH).  |
-|    provider | no       |            | Convenient method that passes all of the above connection arguments as a dict object. All constraints (required, choices, etc.) must be met either by individual arguments or values in this dict. |
+|        host | yes      |            | Hostname or address for connecting to the remote device over the specified ``transport``. The value of this key is the destination address for the transport. |
+|        port | no       |            | Port used to build the connection to the remote device. If the value of this key does not specify the value, the value defaults to 22. |
+|    username | no       |            | Configures the username that authenticates the connection to the remote device. The value of this key authenticates the CLI login. If this key does not specify a value, the value of environment variable ANSIBLE_NET_USERNAME is used instead. |
+|    password | no       |            | Specifies the password that authenticates the connection to the remote device. If this key does not specify the value, the value of environment variable ANSIBLE_NET_PASSWORD is used instead. |
+|   authorize | no       | yes, no*   | Instructs the module to enter privileged mode on the remote device before sending any commands. If this key does not specify the value, the value of environment variable ANSIBLE_NET_AUTHORIZE is used instead. If not specified, the device attempts to execute all commands in non-privileged mode.|
+|   auth_pass | no       |            | Specifies the password to use if required to enter privileged mode on the remote device. If ``authorize`` is set to no, then this key is not applicable. If this key does not specify the value, the value of environment variable ANSIBLE_NET_AUTH_PASS is used instead. |
+|   transport | yes      | cli*       | Configures the transport connection to use when connecting to the remote device. This key supports connectivity to the device over CLI (SSH).  |
+|    provider | no       |            | Convenient method that passes all of the above connection arguments as a dictonary object. All constraints (such as required, choices) must be met either by individual arguments or values in this dictonary. |
+
 
 ```
 Note: Asterisk (*) denotes the default value if none is specified.
@@ -107,9 +111,8 @@ features.
 
 
 Sample ``hosts`` file:
-
-    [leafs]
-    leaf1
+ 
+    leaf1 ansible_host= <ip_address> ansible_net_os_name= <OS name(dellos9/dellos6/dellos10)>
 
 Sample ``host_vars/leaf1``:
 
@@ -126,6 +129,7 @@ Sample ``vars/main.yml``:
 
 	dellos_system:
       leaf1:
+        unique_hostname: True
         snmp_contact:  test
         snmp_location: chennai
         snmp_community:
@@ -158,7 +162,7 @@ Sample ``vars/main.yml``:
             ipv4: True
 
  
-A simple playbook to setup system, ``leaf.yml``:
+Simple playbook to setup system, ``leaf.yml``:
 
     - hosts: leafs
       roles:

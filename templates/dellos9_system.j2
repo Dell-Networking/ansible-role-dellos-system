@@ -20,6 +20,9 @@ dellos_system:
         trapcom: msft
         udpport: 162
         state: absent
+    snmp_traps: all
+    unique_hostname: True
+    enable_password: xxxxx
     users:
       - username: test
         password: test
@@ -43,7 +46,21 @@ dellos_system:
 hostname {{ hostname }}
 {% endif %}
 {% for key,value in system_vars.iteritems() %}
-  {% if key == "snmp_contact" %}
+  {% if key == "unique_hostname" %}
+    {% if value %}
+feature unique-name
+    {% else %}
+no feature unique-name
+    {% endif %}
+
+  {% elif key == "enable_password" %}
+    {% if value %}
+enable password {{ value }}
+    {% else %}
+no enable password
+    {% endif %}
+
+  {% elif key == "snmp_contact" %}
     {% if value %}
 snmp-server contact {{ value }}
     {% else %}
@@ -94,6 +111,13 @@ snmp-server host {{ item.ip }} traps version 2c public udp-port 162
         {% endif %}
       {% endif %}
     {% endfor%}
+
+  {% elif key == "snmp_traps" %}
+    {% if value %}
+snmp-server enable traps
+    {% else %}
+no snmp-server enable traps
+    {% endif %}
 
   {% elif key == "users" %}
     {% for item in value %}

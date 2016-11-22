@@ -61,9 +61,15 @@ dellos_system:
       - name: private
         access_mode: rw
         state: present
+    snmp_traps: all
+    enable_password: force10
+    option_82:
+      - remote_id: test 
+        vlan : 100
+        circuit_id: True
     users:
       - username: test
-        password: test
+        password: test1233
         role: sysadmin
         privilege: 0
         state: present
@@ -89,6 +95,8 @@ dellos_system:
         communitystring: public
         udpport: 1
         state: absent
+    snmp_traps: all
+    enable_password: force10os9
     mtu: 2000
     users:
       - username: test
