@@ -114,7 +114,12 @@ snmp-server host {{ item.ip }} traps version 2c public udp-port 162
 
   {% elif key == "snmp_traps" %}
     {% if value %}
-snmp-server enable traps
+      {% if value == "all" %}
+        {% set trap_list = ['bgp','snmp authentication coldstart linkdown linkup syslog-reachable syslog-unreachable','vrrp','lacp','entity','stack','stp','ecfm','vlt','fips','ets','xstp','isis','config','pfc','envmon cam-utilization fan supply temperature','ecmp'] %}
+        {% for name in trap_list %}
+snmp-server enable traps {{ name }}
+        {% endfor %}
+      {% endif %}
     {% else %}
 no snmp-server enable traps
     {% endif %}

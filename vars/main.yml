@@ -63,10 +63,6 @@ dellos_system:
         state: present
     snmp_traps: all
     enable_password: force10
-    option_82:
-      - remote_id: test 
-        vlan : 100
-        circuit_id: True
     users:
       - username: test
         password: test1233

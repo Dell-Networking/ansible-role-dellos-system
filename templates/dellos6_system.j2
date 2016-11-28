@@ -17,10 +17,6 @@ dellos_system:
         state: absent
     snmp_traps: all
     enable_password: force10
-    option_82:
-      - remote_id: test
-        vlan : 100
-        circuit_id : True
     snmp_host:
       - ip: 4.4.4.4
         communitystring: public
@@ -73,8 +69,14 @@ snmp-server community "{{ item.name }}" {{ item.access_mode }}
       {% endfor %}
     {% endif %}
   {% elif key == "snmp_traps" %}
-    {% if value %}
-snmp-server enable traps all
+    {% if value and value == "all" %}
+snmp-server enable traps dvmrp
+snmp-server enable traps pim
+snmp-server enable traps captive-portal
+snmp-server enable traps captive-portal client-auth-failure
+snmp-server enable traps captive-portal client-connect
+snmp-server enable traps captive-portal client-db-full
+snmp-server enable traps captive-portal client-disconnect
     {% else %}
 no snmp-server enable traps all
     {% endif %}
@@ -83,23 +85,6 @@ no snmp-server enable traps all
 enable password {{ value }}
     {% else %}
 no enable password
-    {% endif %}
-  {% elif key == "option_82" %}
-    {% if value %}
-      {% for item in value  %}
-        {% if item.vlan is defined %}
-          {% if item.remote_id is defined and item.remote_id %}
-dhcp l2relay remote-id {{ item.remote_id }} vlan {{ item.vlan }}
-          {% else %}
-no dhcp l2relay remote-id vlan {{ item.vlan }}
-          {% endif %}
-          {% if item.circuit_id is defined and item.circuit_id %}
-dhcp l2relay circuit-id vlan {{ item.vlan }}
-          {% else %}
-no dhcp l2relay circuit-id vlan {{item.vlan }}
-          {% endif %}
-        {% endif %}
-      {% endfor %}
     {% endif %}
   {% elif key == "snmp_host" %}
     {% for item in value %}
