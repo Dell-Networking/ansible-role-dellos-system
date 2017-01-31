@@ -17,10 +17,12 @@ dellos_system:
         state: present
     snmp_host:
       - ip: 2001:4898:f0:f09b::2000
-        trapcom: msft
+        communitystring: msft
         udpport: 162
         state: absent
-    snmp_traps: all
+    snmp_traps: 
+      - name: config
+        state: present
     unique_hostname: True
     enable_password: xxxxx
     users:
@@ -35,11 +37,35 @@ dellos_system:
     logging:
       - ip: 1.1.1.1
         state: present
+    tacacsserver:
+        key: 7
+        hiddenkey: 9ea8ec421c2e2e5bec757f44205015f6d81e83a4f0aa52fa
+        tacacsgroup:
+          - name: TACACS
+            host:
+              - ip: 2001:4898:f0:f09b::1000
+                timeout: 2
+                state: present
+            state: present
+        aaa_tacacsgroup: TACACS
+        aaa_tacacshost: 
+          - name: default
+            login_or_enable: login
+            use_password: local
+            state: present
+          - name: console
+            login_or_enable: login
+            use_password: local
+        tacacshost:
+          - ip: 2001:4898:f0:f09b::1000
+            timeout: 2
+            state: present
     management_rt:
       - ip: 10.16.148.254
         state: present
         ipv4: True
 ###################################################}
+{% if (dellos_system is defined and dellos_system) and (hostname in dellos_system) %}
 {% set system_vars = dellos_system[hostname] %}
 
 {% if hostname is defined and hostname %}
@@ -89,7 +115,7 @@ snmp-server community {{ item.name }} {{ item.access_mode }}
       {% endfor %}
     {% endif %}
 
-  {% elif key == "snmp_host" %}
+  {% elif key == "snmp_host" and value %}
     {% for item in value %}
       {% if item.ip is defined and item.ip %}
         {% if item.state is defined and item.state == "absent" %}
@@ -114,17 +140,29 @@ snmp-server host {{ item.ip }} traps version 2c public udp-port 162
 
   {% elif key == "snmp_traps" %}
     {% if value %}
-      {% if value == "all" %}
-        {% set trap_list = ['bgp','snmp authentication coldstart linkdown linkup syslog-reachable syslog-unreachable','vrrp','lacp','entity','stack','stp','ecfm','vlt','fips','ets','xstp','isis','config','pfc','envmon cam-utilization fan supply temperature','ecmp'] %}
-        {% for name in trap_list %}
-snmp-server enable traps {{ name }}
-        {% endfor %}
-      {% endif %}
-    {% else %}
+      {% for val in value %}
+        {% if val.name is defined and val.name %}
+          {% if val.state is defined and val.state == "absent" %}
+            {% if val.name == "all" %}
 no snmp-server enable traps
+            {% else %}
+no snmp-server enable traps {{ val.name }}
+            {% endif %}
+          {% else %}
+            {% if val.name == "all" %}
+              {% set trap_list = ['bgp','snmp authentication coldstart linkdown linkup syslog-reachable syslog-unreachable','vrrp','lacp','entity','stack','stp','ecfm','vlt','fips','ets','xstp','isis','config','pfc','envmon cam-utilization fan supply temperature','ecmp'] %}
+              {% for name in trap_list %}
+snmp-server enable traps {{ name }}
+              {% endfor %}
+            {% else %}
+snmp-server enable traps {{ val.name }}
+            {% endif %}
+          {% endif %}
+        {% endif %}
+      {% endfor %}
     {% endif %}
 
-  {% elif key == "users" %}
+  {% elif key == "users" and value %}
     {% for item in value %}
       {% if item.username is defined %}
         {% if item.state is defined and item.state == "absent" %}
@@ -155,7 +193,7 @@ username {{ item.username }} nopassword
       {% endif %}
     {% endfor %}
 
-  {% elif key == "sntp" %}}
+  {% elif key == "sntp" and value %}
     {% for item in value %}
       {% if item.ip is defined and item.ip %}
         {% if item.state is defined and item.state == "absent" %}
@@ -166,7 +204,7 @@ ntp server {{ item.ip }}
       {% endif %}
     {% endfor %}
 
-  {% elif key == "logging" %}
+  {% elif key == "logging" and value %}
     {% for item in value %}
       {% if item.ip is defined and item.ip %}
         {% if item.state is defined and item.state == "absent" %}
@@ -177,7 +215,7 @@ logging {{ item.ip }}
       {% endif %}
     {% endfor %}
 
-  {% elif key == "management_rt" %}
+  {% elif key == "management_rt" and value %}
     {% for item in value %}
       {% if item.ip is defined and item.ip %}
         {% if item.ipv4 is defined and item.ipv4 %}
@@ -196,8 +234,90 @@ management route ::/0 {{ item.ip }}
       {% endif %}
     {% endfor %}
 
+  {% elif key == "tacacsserver" %}
+    {% if value %}
+    {% set item = value %}
+      {% if item.key is defined %}
+        {% if item.key %}
+          {% if item.hiddenkey is defined and item.hiddenkey %}
+tacacs-server key {{ item.key }} {{ item.hiddenkey }}
+          {% else %}
+tacacs-server key {{ item.key }}
+          {% endif %}
+        {% else %}
+no tacacs-server key
+        {% endif %}
+      {% endif %}
+
+      {% if item.tacacsgroup is defined and item.tacacsgroup %}
+        {% for groupitem in item.tacacsgroup %}
+          {% if groupitem.name is defined and groupitem.name %}
+            {% if groupitem.state is defined and groupitem.state == "absent" %}
+no tacacs-server group {{ groupitem.name }}
+            {% else %}
+tacacs-server group {{ groupitem.name }}
+              {% if groupitem.host is defined and groupitem.host %}
+                {% for hostlist in groupitem.host %}
+                  {% if hostlist.ip is defined and hostlist.ip %}
+                    {% if hostlist.state is defined and hostlist.state == "absent" %}
+ no tacacs-server host {{ hostlist.ip }}
+                    {% else %}
+                      {% if hostlist.timeout is defined and hostlist.timeout %}
+ tacacs-server host {{ hostlist.ip }} timeout {{ hostlist.timeout }}
+                      {% else %}
+ tacacs-server host {{ hostlist.ip }}
+                      {% endif %}
+                    {% endif %}
+                  {% endif %}
+                {% endfor %}
+              {% endif %}
+            {% endif %}
+          {% endif %}
+        {% endfor %}
+      {% endif %}
+
+      {% if item.aaa_tacacsgroup is defined %}
+        {% if item.aaa_tacacsgroup %}
+aaa tacacs group {{ item.aaa_tacacsgroup }}
+        {% else %}
+no aaa tacacs group
+        {% endif %}
+      {% endif %}
+
+      {% if item.tacacshost is defined and item.tacacshost %}
+        {% for hostlist in item.tacacshost %}
+          {% if hostlist.ip is defined and hostlist.ip %}
+            {% if hostlist.state is defined and hostlist.state == "absent" %}
+no tacacs-server host {{ hostlist.ip }}
+            {% else %}
+              {% if hostlist.timeout is defined and hostlist.timeout %}
+tacacs-server host {{ hostlist.ip }} timeout {{ hostlist.timeout }}
+              {% else %}
+tacacs-server host {{ hostlist.ip }}
+              {% endif %}
+            {% endif %}
+          {% endif %}
+        {% endfor %}
+      {% endif %}
+
+      {% if item.aaa_tacacshost is defined and item.aaa_tacacshost %}
+        {% for auth_list in item.aaa_tacacshost %}
+          {% if auth_list.login_or_enable is defined and auth_list.login_or_enable %}
+            {% if auth_list.name is defined and auth_list.name %}
+              {% if auth_list.state is defined and auth_list.state == "absent" %}
+no aaa authentication {{ auth_list.login_or_enable }} {{ auth_list.name }}
+              {% else %}
+                {% if auth_list.use_password is defined and auth_list.use_password %}
+aaa authentication {{ auth_list.login_or_enable }} {{ auth_list.name }} tacacs+ {{ auth_list.use_password }}
+                {% else %}
+aaa authentication {{ auth_list.login_or_enable }} {{ auth_list.name }} tacacs+
+                {% endif %}
+              {% endif %}
+            {% endif %}
+          {% endif %}
+        {% endfor %}
+      {% endif %}
+    {% endif %}
   {% endif %}
 {% endfor %}
-
-
-
+{% endif %}

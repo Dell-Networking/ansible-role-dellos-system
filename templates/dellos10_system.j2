@@ -26,6 +26,7 @@ dellos_system:
         state: present
 
 ###############################################}
+{% if (dellos_system is defined and dellos_system) and (hostname in dellos_system) %}
 {% set system_vars = dellos_system[hostname] %}
 {% if hostname is defined and hostname %}
 hostname {{ hostname }}
@@ -102,4 +103,4 @@ logging server {{ item.ip }}
 
   {% endif %}
 {% endfor %}
-
+{% endif %}
