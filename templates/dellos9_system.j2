@@ -71,6 +71,7 @@ dellos_system:
 {% if hostname is defined and hostname %}
 hostname {{ hostname }}
 {% endif %}
+{% if system_vars %}
 {% for key,value in system_vars.iteritems() %}
   {% if key == "unique_hostname" %}
     {% if value %}
@@ -321,3 +322,5 @@ aaa authentication {{ auth_list.login_or_enable }} {{ auth_list.name }} tacacs+
   {% endif %}
 {% endfor %}
 {% endif %}
+{% endif %}
+

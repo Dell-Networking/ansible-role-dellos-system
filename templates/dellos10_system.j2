@@ -31,7 +31,7 @@ dellos_system:
 {% if hostname is defined and hostname %}
 hostname {{ hostname }}
 {% endif %}
-
+{% if system_vars %}
 {% for key,value in system_vars.iteritems() %}
   {% if key == "snmp_contact" %}
     {% if value %}
@@ -103,4 +103,5 @@ logging server {{ item.ip }}
 
   {% endif %}
 {% endfor %}
+{% endif %}
 {% endif %}
