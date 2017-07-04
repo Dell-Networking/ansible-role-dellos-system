@@ -2,77 +2,92 @@
 {#############################################
 
 Purpose:
-Configure System commands for OS9 Devices
+Configure system commands for dellos9 Devices
 
 dellos_system:
- OS9:
-    snmp_contact:  test
-    snmp_location: chennai
-    snmp_community:
-      - name: public
-        access_mode: ro
-        state: present
-      - name: private
-        access_mode: rw
-        state: present
-    snmp_host:
-      - ip: 2001:4898:f0:f09b::2000
-        communitystring: msft
-        udpport: 162
-        state: absent
-    snmp_traps: 
-      - name: config
-        state: present
-    unique_hostname: True
+    unique_hostname: true
     enable_password: xxxxx
-    users:
-      - username: test
-        password: test
-        role: sysadmin
-        privilege: 0
-        state: present
+    service_passwd_encryption: true
+    banner:
+      exec: t hai t
+      login: 
+        ack_enable: true
+        ack_prompt: testbanner
+        keyboard_interactive: true
+        banner_text: cloginbannerc
+      motd: t ansibletest t
+    hash_algo:
+      algo: 
+        - name: lag
+          mode: xor1
+          stack_unit: 0
+          port_set: 0
+          state: present
+        - name: ecmp
+          mode: xor1
+          stack_unit: 0
+          port_set: 0
+          state: present
+      seed:
+        - value: 3
+          stack_unit: 0
+          port_set: 0
+          state: present
+        - value: 2
+          state: present    
+    load_balance:
+      ingress_port: true
+      ip_selection: vlan dest-ip
+      ipv6_selection: dest-ipv6 vlan
+      tunnel:
+        hash_field: 
+          - name: mac-in-mac
+            header: tunnel-header-ipv4
+            state: present
+    clock:
+      summer_time:
+        timezone_name: PST
+        type: date
+        start_datetime: 2 jan 1991 22:33
+        end_datetime: 3 jan 2017 22:33
+        offset_mins: 20
+      timezone:
+        name: IST
+        offset_hours: -5
+        offset_mins: 20      
+    reload_type:
+      auto_save: true
+      boot_type: normal-reload
+      config_scr_download: true
+      dhcp_timeout: 5
+      retry_count: 3
+      relay: true
+      relay_remote_id: host
+      vendor_class_identifier: aa  
     sntp:
       - ip: 2.2.2.2
+        vrf:
+          - test
+          - management
         state: present
-    logging:
-      - ip: 1.1.1.1
-        state: present
-    tacacsserver:
-        key: 7
-        hiddenkey: 9ea8ec421c2e2e5bec757f44205015f6d81e83a4f0aa52fa
-        tacacsgroup:
-          - name: TACACS
-            host:
-              - ip: 2001:4898:f0:f09b::1000
-                timeout: 2
-                state: present
-            state: present
-        aaa_tacacsgroup: TACACS
-        aaa_tacacshost: 
-          - name: default
-            login_or_enable: login
-            use_password: local
-            state: present
-          - name: console
-            login_or_enable: login
-            use_password: local
-        tacacshost:
-          - ip: 2001:4898:f0:f09b::1000
-            timeout: 2
-            state: present
     management_rt:
       - ip: 10.16.148.254
         state: present
         ipv4: True
+    line_terminal:
+      vty 0:
+        exec_timeout: 40
+        exec_banner: true
+      vty 1:
+        exec_timeout: 40 200
 ###################################################}
-{% if (dellos_system is defined and dellos_system) and (hostname in dellos_system) %}
-{% set system_vars = dellos_system[hostname] %}
+{% if dellos_system is defined and dellos_system %}
 
 {% if hostname is defined and hostname %}
 hostname {{ hostname }}
 {% endif %}
-{% if system_vars %}
-{% for key,value in system_vars.iteritems() %}
+{% if dellos_system %}
+{% for key,value in dellos_system.iteritems() %}
   {% if key == "unique_hostname" %}
     {% if value %}
 feature unique-name
@@ -87,131 +102,280 @@ enable password {{ value }}
 no enable password
     {% endif %}
 
-  {% elif key == "snmp_contact" %}
+  {% elif key == "service_passwd_encryption" %}
     {% if value %}
-snmp-server contact {{ value }}
+service password-encryption
     {% else %}
-no snmp-server contact
+no service password-encryption
     {% endif %}
 
-  {% elif key == "snmp_location" %}
-    {% if value  %}
-snmp-server location {{ value }}
-    {% else %}
-no snmp-server location
+  {% elif key == "clock" and value %}
+    {% if value.summer_time is defined and value.summer_time %}
+    {% set time_vars = value.summer_time %}
+      {% if time_vars.state is defined and time_vars.state == "absent" %}
+no clock summer-time 
+      {% else %}
+        {% if time_vars.timezone_name is defined and time_vars.timezone_name %}
+          {% if time_vars.type is defined and time_vars.type %}
+            {% if time_vars.start_datetime is defined and time_vars.start_datetime %}
+              {% if time_vars.end_datetime is defined and time_vars.end_datetime %}
+                {% if time_vars.offset_mins is defined and time_vars.offset_mins %}
+clock summer-time {{ time_vars.timezone_name }} {{ time_vars.type }} {{ time_vars.start_datetime }} {{ time_vars.end_datetime }} {{ time_vars.offset_mins }}
+                {% else %}
+clock summer-time {{ time_vars.timezone_name }} {{ time_vars.type }} {{ time_vars.start_datetime }} {{ time_vars.end_datetime }}
+                {% endif %}
+              {% endif %}
+            {% endif %}
+          {% endif %}
+        {% endif %}
+      {% endif %}
+    {% endif %}
+    {% if value.timezone is defined and value.timezone %}
+    {% set timezone_vars = value.timezone %}
+      {% if timezone_vars.state is defined and timezone_vars.state == "absent" %}
+no clock timezone
+      {% else %}
+        {% if timezone_vars.name is defined and timezone_vars.name %}
+          {% if timezone_vars.offset_hours is defined and timezone_vars.offset_hours %}
+            {% if timezone_vars.offset_mins is defined and timezone_vars.offset_mins %}
+clock timezone {{ timezone_vars.name }} {{ timezone_vars.offset_hours }} {{ timezone_vars.offset_mins }}
+            {% else %}
+clock timezone {{ timezone_vars.name }} {{ timezone_vars.offset_hours }}
+            {% endif %}
+          {% endif %}
+        {% endif %}
+      {% endif %}
     {% endif %}
 
-  {% elif key == "snmp_community" %}
-    {% if value %}
-      {% for item in value %}
+    
+  {% elif key == "hash_algo" and value %}
+    {% if value.algo is defined and value.algo %}
+      {% for item in value.algo %}
         {% if item.name is defined and item.name %}
+          {% if item.mode is defined and item.mode %}
+            {% if item.state is defined and item.state == "absent" %}
+              {% if item.stack_unit is defined and item.stack_unit >= 0 %}
+                {% if item.port_set is defined and item.port_set >= 0 %}
+no hash-algorithm {{ item.name }} {{ item.mode }} stack-unit {{ item.stack_unit }} port-set {{ item.port_set }}
+                {% else %}
+no hash-algorithm {{ item.name }} {{ item.mode }} stack-unit {{ item.stack_unit }}
+                {% endif %}
+              {% else %}
+no hash-algorithm {{ item.name }} {{ item.mode }}
+              {% endif %}
+            {% else %}
+              {% if item.stack_unit is defined and item.stack_unit >= 0 %}
+                {% if item.port_set is defined and item.port_set >= 0 %}
+hash-algorithm {{ item.name }} {{ item.mode }} stack-unit {{ item.stack_unit }} port-set {{ item.port_set }}
+                {% else %}
+hash-algorithm {{ item.name }} {{ item.mode }} stack-unit {{ item.stack_unit }}
+                {% endif %}
+              {% else %}
+hash-algorithm {{ item.name }} {{ item.mode }}
+              {% endif %}
+            {% endif %}
+          {% endif %}
+        {% endif %}
+      {% endfor %}
+    {% endif %}
+    {% if value.seed is defined and value.seed %}
+      {% for item in value.seed %}
+        {% if item.value is defined and item.value >= 0 %}
           {% if item.state is defined and item.state == "absent" %}
-no snmp-server community {{ item.name }}
+            {% if item.stack_unit is defined and item.stack_unit >= 0 %}
+              {% if item.port_set is defined and item.port_set >= 0 %}
+no hash-algorithm seed {{ item.value }} stack-unit {{ item.stack_unit }} port-set {{ item.port_set }}
+              {% else %}
+no hash-algorithm seed {{ item.value }} stack-unit {{ item.stack_unit }}
+              {% endif %}
+            {% else %}
+no hash-algorithm seed {{ item.value }}
+            {% endif %}
           {% else %}
-            {% if item.access_mode is defined and item.access_mode %}
-snmp-server community {{ item.name }} {{ item.access_mode }}
+            {% if item.stack_unit is defined and item.stack_unit >= 0 %}
+              {% if item.port_set is defined and item.port_set >= 0 %}
+hash-algorithm seed {{ item.value }} stack-unit {{ item.stack_unit }} port-set {{ item.port_set }}
+              {% else %}
+hash-algorithm seed {{ item.value }} stack-unit {{ item.stack_unit }}
+              {% endif %}
+            {% else %}
+hash-algorithm seed {{ item.value }}
             {% endif %}
           {% endif %}
         {% endif %}
       {% endfor %}
     {% endif %}
 
-  {% elif key == "snmp_host" and value %}
-    {% for item in value %}
-      {% if item.ip is defined and item.ip %}
-        {% if item.state is defined and item.state == "absent" %}
-          {% if item.communitystring is defined and item.communitystring %}
-no snmp-server host {{ item.ip }} traps version 2c {{ item.communitystring }}
-          {% else %}
-no snmp-server host {{ item.ip }} traps version 2c
-          {% endif %}
+  {% elif key == "banner" and value %}
+    {% if value.exec is defined %}
+      {% if value.exec %}
+banner exec {{ value.exec }}
+      {% else %}
+no banner exec 
+      {% endif %}
+    {% endif %}
+    {% if value.motd is defined %}
+      {% if value.motd %}
+banner motd {{ value.motd }}
+      {% else %}
+no banner motd
+      {% endif %}
+    {% endif %}
+    {% if value.login is defined and value.login %}
+    {% set login_vars = value.login %}
+      {% if login_vars.ack_enable is defined %}
+        {% if login_vars.ack_enable %}
+banner login acknowledgment enable
         {% else %}
-          {% if item.communitystring is defined and item.communitystring %}
-            {% if item.udpport is defined and item.udpport %}
-snmp-server host {{ item.ip }} traps version 2c {{ item.communitystring }} udp-port {{ item.udpport }}
-            {% else %}
-snmp-server host {{ item.ip }} traps version 2c {{ item.communitystring }} udp-port 162
-            {% endif %}
-          {% else %}
-snmp-server host {{ item.ip }} traps version 2c public udp-port 162
-          {% endif %}
+no banner login acknowledgment enable
         {% endif %}
       {% endif %}
-    {% endfor%}
-
-  {% elif key == "snmp_traps" %}
-    {% if value %}
-      {% for val in value %}
-        {% if val.name is defined and val.name %}
-          {% if val.state is defined and val.state == "absent" %}
-            {% if val.name == "all" %}
-no snmp-server enable traps
-            {% else %}
-no snmp-server enable traps {{ val.name }}
-            {% endif %}
-          {% else %}
-            {% if val.name == "all" %}
-              {% set trap_list = ['bgp','snmp authentication coldstart linkdown linkup syslog-reachable syslog-unreachable','vrrp','lacp','entity','stack','stp','ecfm','vlt','fips','ets','xstp','isis','config','pfc','envmon cam-utilization fan supply temperature','ecmp'] %}
-              {% for name in trap_list %}
-snmp-server enable traps {{ name }}
-              {% endfor %}
-            {% else %}
-snmp-server enable traps {{ val.name }}
+      {% if login_vars.ack_prompt is defined %}
+        {% if login_vars.ack_prompt %}
+banner login acknowledgment prompt {{ login_vars.ack_prompt }}
+        {% else %}
+no banner login acknowledgment prompt
+        {% endif %}
+      {% endif %}
+      {% if login_vars.keyboard_interactive is defined %}
+        {% if login_vars.keyboard_interactive %}
+banner login keyboard-interactive
+        {% else %}
+no banner login keyboard-interactive
+        {% endif %}
+      {% endif %}
+      {% if login_vars.banner_text is defined %}
+        {% if login_vars.banner_text %}
+banner login {{ login_vars.banner_text }}
+        {% else %}
+no banner login 
+        {% endif %}
+      {% endif %}
+    {% endif %}
+  {% elif key == "load_balance" and value %}
+    {% if value.ingress_port is defined %}
+      {% if value.ingress_port %}
+load-balance ingress-port enable
+      {% else %}
+no load-balance ingress-port enable
+      {% endif %}
+    {% endif %}
+    {% if value.tcp_udp is defined %}
+      {% if value.tcp_udp %}
+load-balance tcp-udp enable
+      {% else %}
+no load-balance tcp-udp enable
+      {% endif %}
+    {% endif %}
+    {% if value.ip_selection is defined %}
+      {% if value.ip_selection %}
+load-balance ip-selection {{ value.ip_selection }}
+      {% else %}
+no load-balance ip-selection
+      {% endif %}
+    {% endif %}
+    {% if value.ipv6_selection is defined %}
+      {% if value.ipv6_selection %}
+load-balance ipv6-selection {{ value.ipv6_selection }}
+      {% else %}
+no load-balance ipv6-selection
+      {% endif %}
+    {% endif %}
+    {% if value.tunnel is defined and value.tunnel %}
+    {% set tunnel_vars = value.tunnel %}
+      {% if tunnel_vars.hash_field is defined and tunnel_vars.hash_field %}
+        {% for item in tunnel_vars.hash_field %}
+          {% if item.name is defined and item.name %}
+            {% if item.header is defined and item.header %}
+              {% if item.state is defined and item.state == "absent" %}
+no load-balance tunnel {{ item.name }} {{ item.header }}
+              {% else %}
+load-balance tunnel {{ item.name }} {{ item.header }}
+              {% endif %}
             {% endif %}
           {% endif %}
-        {% endif %}
-      {% endfor %}
+        {% endfor %}
+      {% endif %}
     {% endif %}
 
-  {% elif key == "users" and value %}
-    {% for item in value %}
-      {% if item.username is defined %}
-        {% if item.state is defined and item.state == "absent" %}
-no username {{ item.username }}
-        {% else %}
-          {% if item.password is defined and item.password %}
-            {% if item.role is defined and item.role %}
-              {% if item.privilege is defined and item.privilege %}
-username {{ item.username }} password {{ item.password }} role {{ item.role }} privilege {{ item.privilege }}
-              {% else %}
-username {{ item.username }} password {{ item.password }} role {{ item.role }}
-              {% endif %}
-            {% else %}
-username {{ item.username }} password {{ item.password }}
-            {% endif %}
-          {% elif not item.password %}
-            {% if item.role is defined and item.role %}
-              {% if item.privilege is defined and item.privilege %}
-username {{ item.username }} nopassword role {{ item.role }} privilege {{ item.privilege }}
-              {% else %}
-username {{ item.username }} nopassword role {{ item.role }}
-              {% endif %}
-            {% else %}
-username {{ item.username }} nopassword
-            {% endif %}
-          {% endif %}
-        {% endif %}
+  {% elif key == "reload_type" and value %}
+reload-type
+    {% if value.auto_save is defined %}
+      {% if value.auto_save %}
+ auto-save enable
+      {% else %}
+ auto-save disable
       {% endif %}
-    {% endfor %}
+    {% endif %}
+    {% if value.boot_type is defined and value.boot_type %}
+      {% if boot_type_state is defined and boot_type_state =="absent" %}
+ no boot-type {{ value.boot_type }}
+      {% else %}
+ boot-type {{ value.boot_type }}
+      {% endif %}
+    {% endif %}
+    {% if value.config_scr_download is defined %}
+      {% if value.config_scr_download %}
+ config-scr-download enable
+      {% else %}
+ config-scr-download disable
+      {% endif %}
+    {% endif %}
+    {% if value.dhcp_timeout is defined %}
+      {% if value.dhcp_timeout >=0 %}
+ dhcp-timeout {{ value.dhcp_timeout }}
+      {% else %}
+ no dhcp-timeout 0
+      {% endif %}
+    {% endif %}
+    {% if value.retry_count is defined %}
+      {% if value.retry_count >=0 %}
+ retry-count {{ value.retry_count }}
+      {% else %}
+ no retry-count 0
+      {% endif %}
+    {% endif %}
+    {% if value.relay is defined %}
+      {% if value.relay %}
+ relay enable
+      {% else %}
+ relay disable
+      {% endif %}
+    {% endif %}
+    {% if value.relay_remote_id is defined %}
+      {% if value.relay_remote_id %}
+ relay remote-id {{ value.relay_remote_id }}
+      {% else %}
+ no relay remote-id a
+      {% endif %}
+    {% endif %}
+    {% if value.vendor_class_identifier is defined %}
+      {% if value.vendor_class_identifier %}
+ vendor-class-identifier {{ value.vendor_class_identifier }}
+      {% else %}
+ no vendor-class-identifier a
+      {% endif %}
+    {% endif %}
 
   {% elif key == "sntp" and value %}
     {% for item in value %}
       {% if item.ip is defined and item.ip %}
         {% if item.state is defined and item.state == "absent" %}
+          {% if item.vrf is defined and item.vrf %}
+            {% for vrf_name in item.vrf %}
+no ntp server vrf {{ vrf_name }} {{ item.ip }}
+            {% endfor %}
+          {% else %}
 no ntp server {{ item.ip }}
+          {% endif %}
         {% else %}
+          {% if item.vrf is defined and item.vrf %}
+            {% for vrf_name in item.vrf %}
+ntp server vrf {{ vrf_name }} {{ item.ip }}
+            {% endfor %}
+          {% else %}
 ntp server {{ item.ip }}
-        {% endif %}
-      {% endif %}
-    {% endfor %}
-
-  {% elif key == "logging" and value %}
-    {% for item in value %}
-      {% if item.ip is defined and item.ip %}
-        {% if item.state is defined and item.state == "absent" %}
-no logging {{ item.ip }}
-        {% else %}
-logging {{ item.ip }}
+          {% endif %}
         {% endif %}
       {% endif %}
     {% endfor %}
@@ -235,91 +399,33 @@ management route ::/0 {{ item.ip }}
       {% endif %}
     {% endfor %}
 
-  {% elif key == "tacacsserver" %}
-    {% if value %}
-    {% set item = value %}
-      {% if item.key is defined %}
-        {% if item.key %}
-          {% if item.hiddenkey is defined and item.hiddenkey %}
-tacacs-server key {{ item.key }} {{ item.hiddenkey }}
+  {% elif key == "line_terminal" and value %}
+    {% for key in value.keys() %}
+    {% set vty_vars = value[key] %}
+    {% set vty_num = key.split(" ") %}
+line vty {{ vty_num[1] }}
+      {% if vty_vars.exec_timeout is defined %}
+        {% if vty_vars.exec_timeout %}
+          {% set timeout = (vty_vars.exec_timeout | string).split(" ") %}
+          {% if timeout | length > 1 %}
+ exec-timeout {{ vty_vars.exec_timeout }}
           {% else %}
-tacacs-server key {{ item.key }}
+ exec-timeout {{ vty_vars.exec_timeout }} 0
           {% endif %}
         {% else %}
-no tacacs-server key
+ no exec-timeout
         {% endif %}
       {% endif %}
-
-      {% if item.tacacsgroup is defined and item.tacacsgroup %}
-        {% for groupitem in item.tacacsgroup %}
-          {% if groupitem.name is defined and groupitem.name %}
-            {% if groupitem.state is defined and groupitem.state == "absent" %}
-no tacacs-server group {{ groupitem.name }}
-            {% else %}
-tacacs-server group {{ groupitem.name }}
-              {% if groupitem.host is defined and groupitem.host %}
-                {% for hostlist in groupitem.host %}
-                  {% if hostlist.ip is defined and hostlist.ip %}
-                    {% if hostlist.state is defined and hostlist.state == "absent" %}
- no tacacs-server host {{ hostlist.ip }}
-                    {% else %}
-                      {% if hostlist.timeout is defined and hostlist.timeout %}
- tacacs-server host {{ hostlist.ip }} timeout {{ hostlist.timeout }}
-                      {% else %}
- tacacs-server host {{ hostlist.ip }}
-                      {% endif %}
-                    {% endif %}
-                  {% endif %}
-                {% endfor %}
-              {% endif %}
-            {% endif %}
-          {% endif %}
-        {% endfor %}
-      {% endif %}
-
-      {% if item.aaa_tacacsgroup is defined %}
-        {% if item.aaa_tacacsgroup %}
-aaa tacacs group {{ item.aaa_tacacsgroup }}
+      {% if vty_vars.exec_banner is defined %}
+        {% if vty_vars.exec_banner %}
+ exec-banner
         {% else %}
-no aaa tacacs group
+ no exec-banner
         {% endif %}
       {% endif %}
-
-      {% if item.tacacshost is defined and item.tacacshost %}
-        {% for hostlist in item.tacacshost %}
-          {% if hostlist.ip is defined and hostlist.ip %}
-            {% if hostlist.state is defined and hostlist.state == "absent" %}
-no tacacs-server host {{ hostlist.ip }}
-            {% else %}
-              {% if hostlist.timeout is defined and hostlist.timeout %}
-tacacs-server host {{ hostlist.ip }} timeout {{ hostlist.timeout }}
-              {% else %}
-tacacs-server host {{ hostlist.ip }}
-              {% endif %}
-            {% endif %}
-          {% endif %}
-        {% endfor %}
-      {% endif %}
-
-      {% if item.aaa_tacacshost is defined and item.aaa_tacacshost %}
-        {% for auth_list in item.aaa_tacacshost %}
-          {% if auth_list.login_or_enable is defined and auth_list.login_or_enable %}
-            {% if auth_list.name is defined and auth_list.name %}
-              {% if auth_list.state is defined and auth_list.state == "absent" %}
-no aaa authentication {{ auth_list.login_or_enable }} {{ auth_list.name }}
-              {% else %}
-                {% if auth_list.use_password is defined and auth_list.use_password %}
-aaa authentication {{ auth_list.login_or_enable }} {{ auth_list.name }} tacacs+ {{ auth_list.use_password }}
-                {% else %}
-aaa authentication {{ auth_list.login_or_enable }} {{ auth_list.name }} tacacs+
-                {% endif %}
-              {% endif %}
-            {% endif %}
-          {% endif %}
-        {% endfor %}
-      {% endif %}
-    {% endif %}
+    {% endfor %}
   {% endif %}
+
 {% endfor %}
 {% endif %}
 {% endif %}

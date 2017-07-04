@@ -1,7 +1,8 @@
 System Role for Dell EMC Networking OS
 ======================================
 
-This role facilitates the configuration of global system attributes. It supports the configuration of hostname, SNMP server, NTP server,logging servers, management route, and CLI users. This role is abstracted for OS6, OS9, and OS10.
+This role facilitates the configuration of global system attributes. This role is abstracted for dellos6, dellos9, and dellos10. It specifically enables configuration of hostname, NTP server and enable password for all three dellos. 
+In addition to this dellos9 supports the configuration of management route, hash alogrithm, clock, line terminal, banner and reload type.
 
 
 Installation
@@ -13,76 +14,91 @@ ansible-galaxy install Dell-Networking.dellos-system
 
 Requirements
 ------------
-This role requires an SSH connection for connectivity to your Dell EMC Networking device. You can use any of the built-in Dell EMC Networking OS connection variables, or the ``provider``
-dictionary.
+This role requires an SSH connection for connectivity to your Dell EMC Networking device. You can use any of the built-in Dell EMC Networking OS connection variables, or the ``provider`` dictionary.
 
 Role Variables
 --------------
-
-``dellos_system``(dictionary) contains the hostname (dictionary). 
-The hostname is the value of the variable ``hostname`` that corresponds to the name of the OS device.This role is abstracted using the variable ``ansible_net_os_name`` that can take the following values: dellos6, dellos9 and dellos10.
 
 Any role variable with a corresponding state variable set to absent negates the configuration of that variable. For variables with no state variable, setting an empty value for the variable negates the corresponding configuration.
 
 The variables and its values are case-sensitive.
 
-``hostname`` contains the following keys:
+``dellos_system`` contains the following keys:
 
 |        Key | Type                      | Notes                                                                                                                                                                                     |
 |------------|---------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| unique_hostname | boolean: true, false* | Configures unique hostname in the blade switch. This key is only supported for blade switch (MXL) in OS9 devices.  |
-| enable_password | string              | Configures enable password. This key is only supported in OS6 and OS9. |
-| snmp_contact | string | Configures SNMP contact information.  |
-| snmp_location | string |Configures SNMP location information. |
-| snmp_community | list | Configures the SNMP community information. See the following snmp_community.* keys for each list item. |
-| snmp_community.name | string (required)         | Configures the SNMP community string.                                                                                                                                                                |
-|snmp_community.access_mode | string, choices: ro, rw           | Configures the access mode for the community.                                                                                                                                             |
-| snmp_community.state | string, choices: absent, present*   | If set to absent, deletes the SNMP community information.                                                                                                               |
-| snmp_host | list | Configures SNMP hosts to receive SNMP traps. See the following snmp_host.* keys for each list item. For OS10 devices, this key is not supported. |
-| snmp_host.ip | string (required) | Configures IP address of the SNMP trap host. |
-| snmp_host.communitystring | string | Configures SNMP community string of the trap host. |
-| snmp_host.udpport | string | Configures UDP number of the SNMP trap host. For OS9 devices, the value range is 0-65535 and 1-65535 for OS6 devices. |
-| snmp_host.state | string, choices: absent, present* | If set to absent, deletes the SNMP trap host. |
-| snmp_traps | list | Configures SNMP traps. See the following snmp_traps.* keys for each list item. This key is supported only in OS9 and OS6. |
-| snmp_traps.name | string | Enables SNMP traps.   |
-| snmp_traps.state | string, choices: absent, present* | If set to absent, deletes the SNMP trap. |
-| mtu | integer | Configures Maximum Transmission Unit for all interfaces. This key is supported only in OS6. |
-| users | list | Configures user account. See the following users.* keys for each list item. |
-|   users.username | string (required)         | Configures username. The username must adhere to specific format guidelines. Valid usernames begin with A-Z, a-z, or 0-9 and can also contain any of the following characters: @#$%^&*-_= +;<>,.~  |
-|   users.password | string                    | Configures password set for the username. Password length must be at least eight characters in OS10 and OS6 devices.                                              |
-|       users.role | string                    | Configures the role assigned to the user. This key is not supported in OS6.                                                                      |
-|  users.privilege | int                | Configures the privilege level for the user. For OS9 devices, the permitted values are integers between 0 and 15. For OS6 devices, the value can be either 0, 1, or 15. For OS9 and OS6, if you omit this key, the default privilege is 1. This key is not supported in OS10.                                      |
-|     users.state | string, choices: absent, present*     | If set to absent, deletes a user account.                                                                                                                                 |
+| unique_hostname | boolean: true, false* | Configures unique hostname in the blade switch. This key is only applicable for blade switch (MXL) in dellos9 devices.  |
+| enable_password | string              | Configures enable password. This key is not applicable for dellos10. |
+| mtu | integer | Configures Maximum Transmission Unit for all interfaces. This key is not applicable for dellos9 and dellos10. |
 | sntp | list | Configures the NTP server. See the following sntp.* keys for each list item. |
 |         sntp.ip | string (required)         | Configures the IPv4 address for the NTP server. The value must be in the form of A.B.C.D                                                                                             |
-|     sntp.state | string, choices: absent, present*     | If set to absent, deletes the NTP server.                                                                                                                                          |
-| logging | list | Configures the logging server. See the following logging.* keys for each list item. |
-|         logging.ip | string (required)         | Configures the IPv4 address for the logging server. The value must be in the form of A.B.C.D                                                                                                 |
-|     logging.state | string, choices: absent, present*     | If set to absent, deletes the logging server.                                                                                                             |
-| management_rt | list | Configures the management routes. This key is not supported in OS10 and OS6. |
+|  sntp.state | string, choices: absent, present*     | If set to absent, deletes the NTP server.                   |
+| management_rt | list | Configures the management routes. This key is supported only for dellos9. |
 | management_rt.ip | string (required) | Configures IP destination prefix for management route. For IPV4, the value must be in the form of A.B.C.D and for IPv6 the value must be in the form of A:B:C:D::E  |
 | management_rt.ipv4 | boolean: true*, false | Specifies management route is an IPv4 or IPv6 address. When this is set to false or undefined, it sets IP as IPv6. |
 | management_rt.state | string, choices: absent, present* | If set to absent, deletes the management route.|
-| tacacsserver | dictionary | Configures TACACS server and enables AAA authentication. See the following tacacsserver.* keys for each list item. This key is supported in OS6 and OS9.|
-| tacacsserver.key | string (required), choices: 7, WORD | Configures authentication key for a TACACS server. For configuring a hidden key, this key value should be 7. For other cases, any string can be accepted as authentication key. | 
-| tacacsserver.hiddenkey | string | Configures hidden key string for authentication. The value should be of length 256 for OS6. | 
-| tacacsserver.tacacsgroup | list | Configures TACACS server group. This key is supported only in OS9.|
-| tacacsgroup.name | string (required) | Configures name for the TACACS server group. | 
-| tacacsgroup.host | list | Configures list of hosts in a TACACS server group. See the following host.* keys for each list item. |           
-| host.ip | string (required)| Configures IP address of the TACACS server host. |
-| host.timeout | integer, default=10 | Configures the timeout value for the TACACS server to reply. |  
-| host.state | string, choices: absent,present | Configuring this key as absent deletes the host from a TACACS server group. |
-| tacacsgroup.state | string, choices: absent,present | If set to absent, deletes a TACACS server group. |
-| tacacsserver.aaa_tacacsgroup | string | Configures the name of the TACACS server group to enable AAA authentication. This key is supported only in OS9. |
-| tacacsserver.aaa_tacacshost | list | Configures authentication list for TACACS server hosts. See aaa_tacacshost.* keys for each list item. This key is supported in OS9 and OS6.|
-| aaa_tacacshost.name | string | Configures the name of the authentication list. |
-| aaa_tacacshost.login_or_enable | string, choices: login,enable | Configures the authentication list to logins or enable. |
-| aaa_tacacshost.use_password | string, choices: line,local,enable,none | Configures Username/Password used for authentication. Local Username/Password can not be used for enable authentication. |
-| aaa_tacacshost.state | string, choices: absent, present* | If set to absent, deletes the AAA authentication for tacacshost. |
-| tacacshost | list | Configures list of hosts in a TACACS server group. This key is supported in OS9 and OS6.|
-| tacacshost.ip | string (required) | Configures IP address of the TACACS server host. For IPV4, the value must be in the form of A.B.C.D and for IPV6 the value must be in the form of A:B:C:D::E | 
-| tacacshost.timeout | integer, default=10 | Configures the timeout value for the TACACS server to reply. |
-| tacacshost.state | string, choices: absent,present* | If set to absent, deletes the host from a TACACS server group. |
+| line_terminal | dictionary | Configures the terminal line. This key is not supported in dellos10 and dellos6. See the following line_terminal.* for each item. |
+| line_terminal.&lt;terminal&gt; | dictionary | Configures the primary or virtual terminal line. The value can be of following: console &lt;line_number&gt; , vty &lt;line_number&gt;. See the following &lt;terminal&gt;.* for each item. |
+| &lt;terminal&gt;.exec_timeout | string | Configures the EXEC timeout. The vlaue can be in the form "&lt;min&gt; &lt;sec&gt;" |
+| &lt;terminal&gt;.exec_banner | boolean: true, false* | Configures the EXEC banner. |
+| &lt;terminal&gt;.login_banner | boolean: true, false* | Configures the login banner. |
+| &lt;terminal&gt;.motd_banner | boolean: true, false* | Configures the motd banner. |
+| service_passwd_encryption | boolean: true, false | Configures system password encryption.  |
+| hash_algo | dictionary | Configures hash algorithm commands. See the following hash_algo.* keys for each list item. This key is not applicable for dellos6.|
+|hash_algo.algo | list         | Configures hashing algorithm. See the following algo.* for each list item.     |
+| algo.name | string (required)       | Configures the name of hashing algorithm. |
+| algo.mode | string (required)       | Configures the hashing algorithm mode. |
+| algo.stack_unit | integer       | Configures stack unit for the hashing algorithm. This key is not supported in dellos10. |
+| algo.port_set | integer       | Configures port pipe set for the hashing algorithm. This key is not supported in dellos10. |
+| algo.state | string, choices: absent, present*     | If set to absent, deletes the hashing algorithm.            |
+|hash_algo.seed | list         | Configures hashing algorithm seed. See the following seed.* for each list item. This key is not applicable for dellos10.  |
+| seed.value | integer (required)       | Configures the hashing algorithm seed value. |
+| seed.stack_unit | integer       | Configures stack unit for the hashing algorithm seed. |
+| seed.port_set | integer       | Configures port pipe set for the hashing algorithm seed. |
+| seed.state | string, choices: absent, present*     | If set to absent, deletes the hashing algorithm seed.      |
+| banner | dictionary | Configures global banner commands. See the following banner.* keys for each list item. This key is not supported in dellos10 and dellos6. |
+| banner.login | dictionary | Configures login banner. See the following login.* keys for each list item. |
+| login.ack_enable | boolean: true, false       | Configures positive acknowledgment.  |
+| login.ack_prompt | string       | Configures positive acknowledgment prompt.  |
+| login.keyboard_interactive | boolean: true, false       | Configures keyboard interactive prompt. |
+| login.banner_text | string       | Configures banner text for login banner. The value can be in the format 'c &lt;banner-text&gt; c', where 'c' is a delimiting character. |
+| banner.exec | string       | Configures banner text for EXEC process creation banner. For dellos9, the value can be in the format 'c &lt;banner-text&gt; c', where 'c' is a delimiting character. For dellos6, the value can be in the format '" &lt;banner-text&gt; "', where " is a delimiting character. |
+| banner.motd | string       | Configures banner text for message of the day banner. The value can be in the format 'c &lt;banner-text&gt; c', where 'c' is a delimiting character. For dellos6, the value can be in the format '" &lt;banner-text&gt; "', where " is a delimiting character. |
+| load_balance | dictionary | Configures global traffic load balance. See the following load_balance.* keys for each list item. This key is not supported in dellos10 and dellos6.|
+| load_balance.ingress_port | boolean: true, false       | Configure to use source port id for hashing algorithm. |
+| load_balance.tcp_udp | boolean: true, false       | Configures to use tcp/udp ports in packets for hashing algorithm. |
+| load_balance.ip_selection | string       | Configures IPV4 key fields to use in hashing algorithm. This key is mutually exclusive with load_balance.tcp_udp |
+| load_balance.mac_selection | string       | Configures mac key fields to use in hashing algorithm. |
+| load_balance.ipv6_selection | string       | Configures IPV6 key fields to use in hashing algorithm. This key is mutually exclusive with load_balance.tcp_udp. |
+| load_balance.tunnel | dictionary    | Configures tunnel key fields to use in hashing algorithm. See the following tunnel.* for each item. |
+| tunnel.hash_field | list    | Configures hash field selection. See the following hash_field.* for each item. |
+| hash_field.name | string (required)       | Configures the hash field selection. |
+| hash_field.header | string       | Configures header for load balance. |
+| hash_field.state | string, choices: absent, present*     | If set to absent, deletes the hash key selection field      |
+| clock | dictionary | Configures time-of-day clock. See the following clock.* keys for each list item.This key is not supported in dellos10 and dellos6. |
+| clock.summer_time | dictionary    | Configures summer(day light) time. See the following summer_time.* for each list item.    |
+| summer_time.timezone_name | string (required)       | Configures the timezone name. |
+| summer_time.type | string (required)       | Configures absolute or recurring summer time. |
+| summer_time.start_datetime | string       | Configures start datetime. The value can be in the format &lt;date&gt; &lt;month&gt; &lt;year&gt; &lt;hrs:mins&gt; |
+| summer_time.end_datetime | string       | Configures end datetime. The value can be in the format &lt;date&gt; &lt;month&gt; &lt;year&gt; &lt;hrs:mins&gt; |
+| summer_time.offset_mins | integer       | Configures offset mins to add. The value can be in range 1-1440.|
+| summer_time.state | string, choices: absent, present*     | If set to absent, deletes the summer time clock.     |
+| clock.timezone | dictionary    | Configures timezone. See the following timezone.* for each list item.     |
+| timezone.name | string (required)       | Configures the timezone name. |
+| timezone.offset_hours | integer       | Configures offset hours to add. The value can be in range -23-23.|
+| timezone.offset_mins | integer       | Configures offset mins to add. The value can be in range 0-59.|
+| timezone.state | string, choices: absent, present*     | If set to absent, deletes the time zone.     |
+| reload_type | dictionary | Configures reload type. See the following reload_type.* keys for each list item. This key is not supported in dellos10 and dellos6. |
+| reload_type.auto_save | boolean: true, false*     | Configures the auto save option for downloaded config/script file.     |
+| reload_type.boot_type | string, choices: bmp-reload,normal-reload    | Configures the boot type.     |
+| reload_type.boot_type_state | string, choices: absent, present*    | If set to absent, deletes the boot type.     |
+| reload_type.config_scr_download | boolean: true, false*     | Configures whether config/script file needs to be downloaded.     |
+| reload_type.dhcp_timeout | integer    | Configures dhcp timeout in mins. The value can be in range 0-50.     |
+| reload_type.retry_count | integer    | Configures the number of retries for image and config download. The value can be in range 0-6.     |
+| reload_type.relay | boolean: true, false*     | Configures addition of option 82 in DHCP client packets.     |
+| reload_type.relay_remote_id | string    | Configures customize remote id.     |
+| reload_type.vendor_class_identifier | boolean: true, false*     | Configures vendor-class-identifier for DHCP option 60. |
+
 
 ```
 Note: Asterisk (*) denotes the default value if none is specified. 
@@ -122,13 +138,10 @@ These modules were added in Ansible version 2.2.0.
 Example Playbook
 ----------------
 
-The following example uses the dellos.dellos-system role to completely set up
-CLI users, the NTP server, the SNMP server, logging servers, and the hostname. 
-The example creates a ``hosts`` file with the switch details and corresponding 
-variables defined in the ``vars/main.yaml`` file at the role path.
+The following example uses the dellos.dellos-system role to completely set the NTP server, hostname, enable password, management route, hash alogrithm, clock, line terminal, banner and reload type. 
+The example creates a ``hosts`` file with the switch details and corresponding variables. The hosts file should define the variable `` ansible_net_os_name `` with corresponding Dell EMC networking OS name.
 It writes a simple playbook that only references the dellos-system role. 
-By including the role, you automatically get access to all of the tasks to configure system
-features. 
+By including the role, you automatically get access to all of the tasks to configure system features. 
 
 
 Sample ``hosts`` file:
@@ -143,70 +156,82 @@ Sample ``host_vars/leaf1``:
       username: xxxxx 
       password: xxxxx
       authorize: yes
-	  auth_pass: xxxxx 
+      auth_pass: xxxxx 
       transport: cli
 	  
-Sample ``vars/main.yaml``:
-
-	dellos_system:
-      leaf1:
-        unique_hostname: True
-        snmp_contact:  test
-        snmp_location: chennai
-        snmp_community:
-          - name: public  
-            access_mode: ro
+    dellos_system:
+      unique_hostname: True
+      sntp:
+        - ip: 2.2.2.2
+          state: absent
+      service_passwd_encryption: true
+      banner:
+        exec: t hai t
+        login:
+          ack_enable: true
+          ack_prompt: testbanner
+          keyboard_interactive: true
+          banner_text: cloginbannerc
+        motd: t ansibletest t
+      hash_algo:
+        algo:
+          - name: lag
+            mode: xor1
+            stack_unit: 0
+            port_set: 0
             state: present
-          - name: private 
-            access_mode: rw
-            state: present 
-        snmp_host:
-          - ip: 2001:4898:f0:f09b::2000
-            communitystring: private
-            udpport: 162
+          - name: ecmp
+            mode: xor1
+            stack_unit: 0
+            port_set: 0
             state: present
-        users:
-          - username: test
-            password: test
-            role: sysadmin
-            privilege: 0
-            state: absent
-        sntp:
-          - ip: 2.2.2.2
-            state: absent
-        logging:
-          - ip: 1.1.1.1
-            state: absent
-        management_rt:
-          - ip: 10.16.148.254
+        seed:
+          - value: 3
+            stack_unit: 0
+            port_set: 0
             state: present
-            ipv4: True
-        tacacsserver:
-          key: 7
-          hiddenkey: 9ea8ec421c2e2e5bec757f44205015f6d81e83a4f0aa52fa
-          tacacsgroup:
-            - name: TACACS
-              host:
-                - ip: 2001:4898:f0:f09b::1000
-                  timeout: 2
-                  state: present
+          - value: 2
+            state: present
+      load_balance:
+        ingress_port: true
+        ip_selection: vlan dest-ip
+        ipv6_selection: dest-ipv6 vlan
+        tunnel:
+          hash_field:
+            - name: mac-in-mac
+              header: tunnel-header-mac
               state: present
-          aaa_tacacsgroup: TACACS
-          aaa_tacacshost:
-            - name: default
-              login_or_enable: login
-              use_password: local
-              state: present
-            - name: console
-              login_or_enable: login
-              use_password: local
-              state: present
-          tacacshost:
-            - ip: 2001:4898:f0:f09b::1000
-              timeout: 2
-              state: present
-
-
+      clock:
+        summer_time:
+          timezone_name: PST
+          type: date
+          start_datetime: 2 jan 1993 22:33
+          end_datetime: 3 jan 2017 22:33
+          offset_mins: 20
+        timezone:
+          name: IST
+          offset_hours: -5
+          offset_mins: 20
+      reload_type:
+        auto_save: true
+        boot_type: normal-reload
+        boot_type_state: absent
+        config_scr_download: true
+        dhcp_timeout: 5
+        retry_count: 3
+        relay: true
+        relay_remote_id: ho
+        vendor_class_identifier: aa
+      management_rt:
+        - ip: 10.16.148.254
+          state: present
+          ipv4: True
+      line_terminal:
+        vty 0:
+          exec_timeout: 40
+          exec_banner: true
+        vty 1:
+          exec_timeout: 40 200
  
 Simple playbook to setup system, ``leaf.yaml``:
 
