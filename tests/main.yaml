@@ -3,6 +3,8 @@
 
 # Sample variables for dellos10 device
 dellos_system:
+    hostname: os10
+    hardware_forwarding: scaled-l3-routes
     hash_algo:
       algo:
         - name: lag
@@ -11,27 +13,31 @@ dellos_system:
         - name: ecmp
           mode: xor
           state: present
-    sntp:
-      - ip: 2.2.2.2
-        state: present
+    load_balance:
+        ingress_port: true
+        ip_selection:
+          - field: source-ip
+            state: present
+        ipv6_selection:
+          - field: source-ip
+            state: present
+        mac_selection:
+          - field: source-mac
+            state: present
+        tcp_udp_selection:
+          - field: l4-source-port
+            state: present
 
 # Sample variables for dellos6 device
 dellos_system:
+    hostname: os6
     enable_password: force10
     mtu: 2000
-    sntp:
-      - ip: 2.2.2.2
-        state: present
 
 # Sample variables for dellos9 device
 dellos_system:
+    hostname: os9
     enable_password: calvin
-    sntp:
-      - ip: 2.2.2.2
-        vrf:
-          - test
-          - tes
-        state: present
     line_terminal:
       vty 0:
         exec_timeout: 40
@@ -67,8 +73,12 @@ dellos_system:
           state: present
     load_balance:
       ingress_port: true
-      ip_selection: vlan dest-ip
-      ipv6_selection: dest-ipv6 vlan
+      ip_selection: 
+        - field: vlan dest-ip
+          state: present
+      ipv6_selection: 
+        - field: dest-ipv6 vlan
+          state: present
       tunnel:
         hash_field:
           - name: mac-in-mac

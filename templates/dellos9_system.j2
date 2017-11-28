@@ -5,6 +5,7 @@ Purpose:
 Configure system commands for dellos9 Devices
 
 dellos_system:
+    hostname: os9
     unique_hostname: true
     enable_password: xxxxx
     service_passwd_encryption: true
@@ -37,8 +38,12 @@ dellos_system:
           state: present    
     load_balance:
       ingress_port: true
-      ip_selection: vlan dest-ip
-      ipv6_selection: dest-ipv6 vlan
+      ip_selection: 
+          - field: vlan dest-ip
+            state: present
+      ipv6_selection: 
+          - field: dest-ipv6 vlan
+            state: present
       tunnel:
         hash_field: 
           - name: mac-in-mac
@@ -64,12 +69,6 @@ dellos_system:
       relay: true
       relay_remote_id: host
       vendor_class_identifier: aa  
-    sntp:
-      - ip: 2.2.2.2
-        vrf:
-          - test
-          - management
-        state: present
     management_rt:
       - ip: 10.16.148.254
         state: present
@@ -80,11 +79,12 @@ dellos_system:
         exec_banner: true
       vty 1:
         exec_timeout: 40 200
+        motd_banner: true
 ###################################################}
 {% if dellos_system is defined and dellos_system %}
 
-{% if hostname is defined and hostname %}
-hostname {{ hostname }}
+{% if dellos_system.hostname is defined and dellos_system.hostname %}
+hostname {{ dellos_system.hostname }}
 {% endif %}
 {% if dellos_system %}
 {% for key,value in dellos_system.iteritems() %}
@@ -267,19 +267,27 @@ load-balance tcp-udp enable
 no load-balance tcp-udp enable
       {% endif %}
     {% endif %}
-    {% if value.ip_selection is defined %}
-      {% if value.ip_selection %}
-load-balance ip-selection {{ value.ip_selection }}
-      {% else %}
+    {% if value.ip_selection is defined and value.ip_selection %}
+      {% for item in value.ip_selection %}
+        {% if item.field is defined and item.field %}
+          {% if item.state is defined and item.state == "absent" %}
 no load-balance ip-selection
-      {% endif %}
+          {% else %}
+load-balance ip-selection {{ item.field }}
+          {% endif %}
+        {% endif %}
+      {% endfor %}
     {% endif %}
-    {% if value.ipv6_selection is defined %}
-      {% if value.ipv6_selection %}
-load-balance ipv6-selection {{ value.ipv6_selection }}
-      {% else %}
+    {% if value.ipv6_selection is defined and value.ipv6_selection %}
+      {% for item in value.ipv6_selection %}
+        {% if item.field is defined and item.field %}
+          {% if item.state is defined and item.state == "absent" %}
 no load-balance ipv6-selection
-      {% endif %}
+          {% else %}
+load-balance ipv6-selection {{ item.field }}
+          {% endif %}
+        {% endif %}
+      {% endfor %}
     {% endif %}
     {% if value.tunnel is defined and value.tunnel %}
     {% set tunnel_vars = value.tunnel %}
@@ -357,29 +365,6 @@ reload-type
       {% endif %}
     {% endif %}
 
-  {% elif key == "sntp" and value %}
-    {% for item in value %}
-      {% if item.ip is defined and item.ip %}
-        {% if item.state is defined and item.state == "absent" %}
-          {% if item.vrf is defined and item.vrf %}
-            {% for vrf_name in item.vrf %}
-no ntp server vrf {{ vrf_name }} {{ item.ip }}
-            {% endfor %}
-          {% else %}
-no ntp server {{ item.ip }}
-          {% endif %}
-        {% else %}
-          {% if item.vrf is defined and item.vrf %}
-            {% for vrf_name in item.vrf %}
-ntp server vrf {{ vrf_name }} {{ item.ip }}
-            {% endfor %}
-          {% else %}
-ntp server {{ item.ip }}
-          {% endif %}
-        {% endif %}
-      {% endif %}
-    {% endfor %}
-
   {% elif key == "management_rt" and value %}
     {% for item in value %}
       {% if item.ip is defined and item.ip %}
@@ -402,8 +387,7 @@ management route ::/0 {{ item.ip }}
   {% elif key == "line_terminal" and value %}
     {% for key in value.keys() %}
     {% set vty_vars = value[key] %}
-    {% set vty_num = key.split(" ") %}
-line vty {{ vty_num[1] }}
+line {{ key }}
       {% if vty_vars.exec_timeout is defined %}
         {% if vty_vars.exec_timeout %}
           {% set timeout = (vty_vars.exec_timeout | string).split(" ") %}
@@ -421,6 +405,13 @@ line vty {{ vty_num[1] }}
  exec-banner
         {% else %}
  no exec-banner
+        {% endif %}
+      {% endif %}
+      {% if vty_vars.motd_banner is defined %}
+        {% if vty_vars.motd_banner %}
+ motd-banner
+        {% else %}
+ no motd-banner
         {% endif %}
       {% endif %}
     {% endfor %}
