@@ -1,5 +1,5 @@
 ---
 - hosts: datacenter
-  connection: local
+  connection: network_cli
   roles:
     - Dell-Networking.dellos-system
