@@ -13,7 +13,7 @@ Installation
 Role variables
 --------------
 
-- Role is abstracted using the *ansible_network_os*/*ansible_net_os_name* variable that can take dellos9, dellos6, and dellos10 values
+- Role is abstracted using the *ansible_network_os* variable that can take dellos9, dellos6, and dellos10 values
 - If *dellos_cfg_generate* is set to true, the variable generates the role configuration commands in a file
 - Any role variable with a corresponding state variable set to absent negates the configuration of that variable
 - Setting an empty value for any variable negates the corresponding configuration
@@ -131,13 +131,13 @@ The *dellos-system* role is built on modules included in the core Ansible code. 
 Example playbook
 ----------------
 
-This example uses the *dellos-system role* to completely set the NTP server, hostname, enable password, management route, hash alogrithm, clock, line terminal, banner and reload type. It creates a *hosts* file with the switch details and corresponding variables. The hosts file should define the *ansible_network_os*/*ansible_net_os_name* variable with corresponding Dell EMC networking OS name. 
+This example uses the *dellos-system role* to completely set the NTP server, hostname, enable password, management route, hash alogrithm, clock, line terminal, banner and reload type. It creates a *hosts* file with the switch details and corresponding variables. The hosts file should define the *ansible_network_os* variable with corresponding Dell EMC networking OS name. 
 
 When *dellos_cfg_generate* is set to true, the variable generates the configuration commands as a .part file in *build_dir* path. By default, the variable is set to false. The system role writes a simple playbook that only references the *dellos-system* role. By including the role, you automatically get access to all of the tasks to configure system features. 
 
 **Sample hosts file**
  
-    leaf1 ansible_host= <ip_address> ansible_net_os_name= <OS name(dellos9/dellos6/dellos10)>
+    leaf1 ansible_host= <ip_address> 
 
 **Sample host_vars/leaf1**
 
