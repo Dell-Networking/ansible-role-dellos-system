@@ -15,7 +15,7 @@ dellos_system:
 {% if dellos_system.hostname is defined and dellos_system.hostname %}
 hostname "{{ dellos_system.hostname }}"
 {% endif %}
-{% for key,value in dellos_system.iteritems() %}
+{% for key,value in dellos_system.items() %}
 
   {% if key == "enable_password" %}
     {% if value  %}

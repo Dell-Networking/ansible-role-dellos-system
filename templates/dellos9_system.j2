@@ -87,7 +87,7 @@ dellos_system:
 hostname {{ dellos_system.hostname }}
 {% endif %}
 {% if dellos_system %}
-{% for key,value in dellos_system.iteritems() %}
+{% for key,value in dellos_system.items() %}
   {% if key == "unique_hostname" %}
     {% if value %}
 feature unique-name
