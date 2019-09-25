@@ -1,6 +1,5 @@
 ---
 # vars file for Dell-Networking.dellos-system, below gives a sample configuration
-
 # Sample variables for dellos10 device
 dellos_system:
     hostname: os10
@@ -114,5 +113,3 @@ dellos_system:
 dellos_system:
     load_balance:
       tcp_udp: true
-
-

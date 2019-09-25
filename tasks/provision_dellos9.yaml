@@ -1,0 +1,16 @@
+---
+# tasks file for dellos9
+ - name: "Generating system configuration for dellos9"
+   template:
+      src: dellos9_system.j2
+      dest: "{{ build_dir }}/system9_{{ hostname }}.conf.part"
+   when: (ansible_network_os is defined and ansible_network_os == "dellos9") and ((dellos_cfg_generate | default('False')) | bool)
+#   notify: save config os9
+   register: generate_output
+
+ - name: "Provisioning system configuration for dellos9"
+   dellos9_config:
+      src: dellos9_system.j2
+   when: (ansible_network_os is defined and ansible_network_os == "dellos9")
+#   notify: save config os9
+   register: output
