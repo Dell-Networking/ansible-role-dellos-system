@@ -1,0 +1,7 @@
+---
+# vars file for Dell-Networking.dellos-system, below gives a sample configuration
+# Sample variables for dellos6 device
+dellos_system:
+    hostname: os6
+    enable_password: force10
+    mtu: 2000

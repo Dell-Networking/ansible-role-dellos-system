@@ -1,38 +1,5 @@
 ---
 # vars file for Dell-Networking.dellos-system, below gives a sample configuration
-# Sample variables for dellos10 device
-dellos_system:
-    hostname: os10
-    hardware_forwarding: scaled-l3-routes
-    hash_algo:
-      algo:
-        - name: lag
-          mode: crc
-          state: present
-        - name: ecmp
-          mode: xor
-          state: present
-    load_balance:
-        ingress_port: true
-        ip_selection:
-          - field: source-ip
-            state: present
-        ipv6_selection:
-          - field: source-ip
-            state: present
-        mac_selection:
-          - field: source-mac
-            state: present
-        tcp_udp_selection:
-          - field: l4-source-port
-            state: present
-
-# Sample variables for dellos6 device
-dellos_system:
-    hostname: os6
-    enable_password: force10
-    mtu: 2000
-
 # Sample variables for dellos9 device
 dellos_system:
     hostname: os9
@@ -83,10 +50,6 @@ dellos_system:
           - name: mac-in-mac
             header: tunnel-header-mac
             state: present
-    line_terminal:
-      vty 0:
-        exec_timeout: 40
-        exec_banner: true
     clock:
       summer_time:
         timezone_name: PST
@@ -107,9 +70,4 @@ dellos_system:
       retry_count: 3
       relay: true
       relay_remote_id: ho
-      vendor_class_identifier: aa
-
-# Sample variables for dellos9 device to configure tcp-udp ports in load balance algorithm.
-dellos_system:
-    load_balance:
-      tcp_udp: true
+      vendor_class_identifier: aa  
